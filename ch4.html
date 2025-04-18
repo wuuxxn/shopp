@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>零食購物網站</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #e67e22;
+      --bg: #fffaf5;
+      --card: #ffffff;
+      --border: #e0e0e0;
+      --font: 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--primary);
+      margin: 0;
+      padding: 2rem;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    h1, h2 {
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      text-align: center;
+      position: relative;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: #555;
+      margin-bottom: 1rem;
+    }
+
+    button {
+      background-color: var(--accent);
+      border: none;
+      color: white;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #cf711c;
+    }
+
+    .remove-btn {
+      background-color: #bbb;
+      margin-left: 1rem;
+    }
+
+    .remove-btn:hover {
+      background-color: #999;
+    }
+
+    .cart {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      font-size: 0.95rem;
+    }
+
+    .total {
+      text-align: right;
+      font-weight: bold;
+      margin-top: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .like-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .like-btn.liked {
+      color: #e74c3c;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>🍪 零食小舖</h1>
+
+    <div class="grid">
+      <div 
+        class="card" 
+        v-for="item in products" 
+        :key="item.id" 
+        :title="item.description"
+      >
+        <button 
+          class="like-btn" 
+          :class="{ liked: isLiked(item.id) }" 
+          @click="toggleLike(item.id)"
+        >
+          
+        </button>
+        <h3>{{ item.name }}</h3>
+        <p>{{ item.price }} 元</p>
+        <button @click="addToCart(item)">加入購物車</button>
+      </div>
+    </div>
+
+    <div class="cart" v-if="cart.length">
+      <h2>🛒 購物車</h2>
+      <div v-for="(item, index) in cart" :key="index" class="cart-item">
+        {{ item.name }} - {{ item.price }} 元
+        <button class="remove-btn" @click="removeFromCart(index)">移除</button>
+      </div>
+      <div class="total">總金額：{{ totalPrice }} 元</div>
+    </div>
+    <div v-else class="cart">
+      <h2>🛒 購物車</h2>
+      <p style="text-align:center;">還沒選擇任何零食喔！</p>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed } = Vue
+
+    createApp({
+      setup() {
+        const products = ref([
+          { id: 1, name: '🍪 手工巧克力餅乾', price: 120, description: '外酥內軟，手工製作的濃郁巧克力餅乾' },
+          { id: 2, name: '🍫 牛奶夾心威化餅', price: 95, description: '香濃牛奶內餡配上酥脆威化餅' },
+          { id: 3, name: '🍘 海苔米果', price: 80, description: '香脆米果包裹著日式海苔' },
+          { id: 4, name: '🍭 綜合水果糖', price: 60, description: '多種水果口味糖果，酸甜可口' },
+          { id: 5, name: '🥠 幸運籤餅', price: 70, description: '每一口都有驚喜的小語等你發現' },
+          { id: 6, name: '🥜 蜂蜜花生酥', price: 90, description: '香甜酥脆的花生與蜂蜜完美結合' },
+          { id: 7, name: '🧇 焦糖鬆餅塊', price: 110, description: '口感紮實，充滿焦糖香氣的迷你鬆餅' },
+          { id: 8, name: '🍩 糖霜甜甜圈脆片', price: 105, description: '甜甜圈造型的香脆餅乾，撒上糖霜' }
+        ])
+
+        const cart = ref([])
+        const likedItems = ref([])
+
+        const addToCart = (item) => {
+          cart.value.push(item)
+        }
+
+        const removeFromCart = (index) => {
+          cart.value.splice(index, 1)
+        }
+
+        const totalPrice = computed(() =>
+          cart.value.reduce((sum, item) => sum + item.price, 0)
+        )
+
+        const toggleLike = (id) => {
+          const index = likedItems.value.indexOf(id)
+          if (index === -1) likedItems.value.push(id)
+          else likedItems.value.splice(index, 1)
+        }
+
+        const isLiked = (id) => likedItems.value.includes(id)
+
+        return { products, cart, addToCart, removeFromCart, totalPrice, toggleLike, isLiked }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>
